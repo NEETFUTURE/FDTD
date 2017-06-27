@@ -7,7 +7,7 @@ program fdtd_tm
   double precision,allocatable,dimension(:,:) :: ez
   double precision,allocatable,dimension(:,:) :: hx
   double precision,allocatable,dimension(:,:) :: hy
-  
+
   double precision :: dx=0.01
   double precision :: dy=0.01
   double precision :: umu=1.257e-6, eps0=8.854e-12, c=2.998e8
@@ -40,15 +40,17 @@ program fdtd_tm
   end do
 
   do n=1,mstep
-    
-    if(t < 0.5/freq) ez(nx/2,ny/2)=ez(10,10)+sin(2.*pi*freq*t)**4
+
+    if(t < 0.5/freq) then
+      ez(nx/2,ny/2)=ez(nx/2,ny/2)+sin(2.*pi*freq*t)**4
+    end if
 
     !電界を計算
     do i=2,nx-1
       do j=2,ny-1
         ez(i,j) = ec1*ez(i,j) &
-          & + ec2x * (hy(i,j) - hy(i-1,j)) &
-          & - ec2y * (hx(i,j) - hx(i,j-1))
+          & - ec2y * (hx(i,j) - hx(i,j-1)) &
+          & + ec2x * (hy(i,j) - hy(i-1,j))
       end do
     end do
 
