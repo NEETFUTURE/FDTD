@@ -5,7 +5,7 @@
 #define NX 71
 #define NY 71
 #define NZ 71
-#define NSTEP 600
+#define NSTEP 100
 #define UMU 1.257e-6
 #define EPS0 8.854e-12
 #define C 2.998e8
@@ -34,8 +34,7 @@ int main(int argc, char **argv)
     double t;
     double dz = 1.0e-2;
 
-    char filename[20];
-    char filename2[20];
+    char filename[40];
 
     FILE *sample_fp;
     FILE *fp;
@@ -66,23 +65,24 @@ int main(int argc, char **argv)
     for (n = 0; n < NSTEP; n++)
     {
 
-        // sprintf(filename, "data_3d/data_%04d.vtk", n);
-        // fp = fopen(filename, "w");
-        sprintf(filename2, "data_3d_raw/data_%04d.raw", n);
-        sample_fp = fopen(filename2, "wb");
+        printf("Done n = %5d/%5d\n", n, NSTEP);
+        sprintf(filename, "data_3d_raw/data_%04d.vtk", n);
+        fp = fopen(filename, "w");
+        printf("File %s opened!\n", filename);
 
-        // fprintf(fp, "# vtk DataFile Version 3.0\n");
-        // fprintf(fp, "Example data 1\n");
-        // fprintf(fp, "ASCII\n");
-        // fprintf(fp, "DATASET STRUCTURED_POINTS\n");
-        // fprintf(fp, "DIMENSIONS %d %d %d\n", NX+1, NY+1, NZ+1);
-        // fprintf(fp, "SPACING 1 1 1\n");
-        // fprintf(fp, "ORIGIN 0 0 0\n");
-        // fprintf(fp, "CELL_DATA %d\n", NX*NY*NZ);
-        // fprintf(fp, "SCALARS ez double\n");
-        // fprintf(fp, "LOOKUP_TABLE default\n");
+        fprintf(fp, "# vtk DataFile Version 3.0\n");
+        fprintf(fp, "Example data 1\n");
+        fprintf(fp, "ACII\n");
+        fprintf(fp, "DATASET STRUCTURED_POINTS\n");
+        fprintf(fp, "DIMENSIONS %d %d %d\n", NX+1, NY+1, NZ+1);
+        fprintf(fp, "SPACING 1 1 1\n");
+        fprintf(fp, "ORIGIN 0 0 0\n");
+        fprintf(fp, "CELL_DATA %d\n", NX*NY*NZ);
+        fprintf(fp, "SCALARS ez double\n");
+        fprintf(fp, "LOOKUP_TABLE default\n");
 
-        fwrite(ez+TRGT_Z*NX*NY, sizeof(double), NX*NY, sample_fp);
+        printf("File initialize done\n" );
+        // fwrite(ez, sizeof(double), NZ*NX*NY, fp);
 
 
         // ******************* 電界の計算 *********************
@@ -120,10 +120,9 @@ int main(int argc, char **argv)
                                                         + hy[k*NX*NY + NX*j     + i]
                                                         - hy[k*NX*NY + NX*j     + i - 1]);
                     }
-                    //fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
+                    fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
                 }
             }
-            //fprintf(fp, "\n");
         }
 
 
@@ -164,8 +163,7 @@ int main(int argc, char **argv)
         }
 
         t = (t + dt / 2.0);
-        // fclose(fp);
-        fclose(sample_fp);
+        fclose(fp);
     }
 
 
