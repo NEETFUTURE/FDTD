@@ -1,2 +1,2 @@
-/data_tm/*.raw
-/data_1d/*.txt
+/data_3d_raw/*.vti
+!.keep

@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkProperty.h>
+#include <vtkXMLImageDataWriter.h>
+#include <vtkImageData.h>
+
 #define NX 71
 #define NY 71
 #define NZ 71
-#define NSTEP 100
+#define NSTEP 200
 #define UMU 1.257e-6
 #define EPS0 8.854e-12
 #define C 2.998e8
@@ -22,13 +28,13 @@ int main(int argc, char **argv)
 {
     int n, i, j, k;
 
-    double *hx = malloc(sizeof(double) * NX * NY * NZ);
-    double *hy = malloc(sizeof(double) * NX * NY * NZ);
-    double *hz = malloc(sizeof(double) * NX * NY * NZ);
+    double *hx = (double*)malloc(sizeof(double) * NX * NY * NZ);
+    double *hy = (double*)malloc(sizeof(double) * NX * NY * NZ);
+    double *hz = (double*)malloc(sizeof(double) * NX * NY * NZ);
 
-    double *ex = malloc(sizeof(double) * NX * NY * NZ);
-    double *ey = malloc(sizeof(double) * NX * NY * NZ);
-    double *ez = malloc(sizeof(double) * NX * NY * NZ);
+    double *ex = (double*)malloc(sizeof(double) * NX * NY * NZ);
+    double *ey = (double*)malloc(sizeof(double) * NX * NY * NZ);
+    double *ez = (double*)malloc(sizeof(double) * NX * NY * NZ);
 
     double dt, ec1, ec2, hc;
     double t;
@@ -61,34 +67,31 @@ int main(int argc, char **argv)
         }
     }
 
+    vtkSmartPointer<vtkImageData> imageData =
+    vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions(NX+1, NY+1, NZ+1);
+#if VTK_MAJOR_VERSION <= 5
+    imageData->SetNumberOfScalarComponents(1);
+    imageData->SetScalarTypeToDouble();
+#else
+    imageData->AllocateScalars(VTK_DOUBLE, 1);
+#endif
+    int* dims = imageData->GetDimensions();
 
     for (n = 0; n < NSTEP; n++)
     {
 
         printf("Done n = %5d/%5d\n", n, NSTEP);
-        sprintf(filename, "data_3d_raw/data_%04d.vtk", n);
-        fp = fopen(filename, "w");
-        printf("File %s opened!\n", filename);
-
-        fprintf(fp, "# vtk DataFile Version 3.0\n");
-        fprintf(fp, "Example data 1\n");
-        fprintf(fp, "ACII\n");
-        fprintf(fp, "DATASET STRUCTURED_POINTS\n");
-        fprintf(fp, "DIMENSIONS %d %d %d\n", NX+1, NY+1, NZ+1);
-        fprintf(fp, "SPACING 1 1 1\n");
-        fprintf(fp, "ORIGIN 0 0 0\n");
-        fprintf(fp, "CELL_DATA %d\n", NX*NY*NZ);
-        fprintf(fp, "SCALARS ez double\n");
-        fprintf(fp, "LOOKUP_TABLE default\n");
-
-        printf("File initialize done\n" );
-        // fwrite(ez, sizeof(double), NZ*NX*NY, fp);
+        sprintf(filename, "../data_3d_raw/data_%04d.vti", n);
 
 
         // ******************* 電界の計算 *********************
-        if (t < 0.5 / freq)
-        {
-            ez[TRGT_Z*NX*NY + TRGT_Y*NX + TRGT_X] = ez[TRGT_Z*NX*NY + TRGT_Y*NX + TRGT_X] + pow(1.5*sin(2.0 * PI * freq * t), 4);
+        
+        if (t < 4.0 / freq)
+        for(i=0;i<NZ;i++){
+            {
+                ez[i*NX*NY + TRGT_Y*NX + TRGT_X] = ez[i*NX*NY + TRGT_Y*NX + TRGT_X] + pow(sin(2.0 * PI * freq * t), 4);
+            }
         }
 
         for (i = 0; i < NX; i++)
@@ -120,7 +123,9 @@ int main(int argc, char **argv)
                                                         + hy[k*NX*NY + NX*j     + i]
                                                         - hy[k*NX*NY + NX*j     + i - 1]);
                     }
-                    fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
+                    // fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
+                    double* pixel = static_cast<double*>(imageData->GetScalarPointer(i,j,k));
+                    pixel[0] = ez[k*NX*NY + NX*j + i];
                 }
             }
         }
@@ -163,8 +168,17 @@ int main(int argc, char **argv)
         }
 
         t = (t + dt / 2.0);
-        fclose(fp);
+
+
+
+        vtkSmartPointer<vtkXMLImageDataWriter> writer =
+            vtkSmartPointer<vtkXMLImageDataWriter>::New();
+        writer->SetFileName(filename);
+#if VTK_MAJOR_VERSION <= 5
+        writer->SetInputConnection(imageData->GetProducerPort());
+#else
+        writer->SetInputData(imageData);
+#endif
+        writer->Write();
     }
-
-
 }
