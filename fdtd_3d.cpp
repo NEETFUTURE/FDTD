@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     {
 
         printf("Done n = %5d/%5d\n", n, NSTEP);
-        sprintf(filename, "../data_3d_raw/data_%04d.vti", n);
+        sprintf(filename, "../data/data_%04d.vti", n);
 
 
         // ******************* 電界の計算 *********************
