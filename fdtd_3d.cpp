@@ -86,19 +86,19 @@ int main(int argc, char **argv)
 
 
         // ******************* 電界の計算 *********************
-        
+
         if (t < 4.0 / freq)
-        for(i=0;i<NZ;i++){
+        for(i=0;i<NZ-1;i++){
             {
                 ez[i*NX*NY + TRGT_Y*NX + TRGT_X] = ez[i*NX*NY + TRGT_Y*NX + TRGT_X] + pow(sin(2.0 * PI * freq * t), 4);
             }
         }
 
-        for (i = 0; i < NX; i++)
+        for (i = 0; i < NX-1; i++)
         {
-            for (j = 0; j < NY; j++)
+            for (j = 0; j < NY-1; j++)
             {
-                for (k = 0; k < NZ; k++)
+                for (k = 0; k < NZ-1; k++)
                 {
                     if (j > 0 && k > 0)
                     {
