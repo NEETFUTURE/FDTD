@@ -1,3 +1,6 @@
+#include "share.h"
+#include "init_pml.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,21 +11,23 @@
 #include <vtkXMLImageDataWriter.h>
 #include <vtkImageData.h>
 
-#define NX 71
-#define NY 71
-#define NZ 71
-#define NSTEP 200
-#define UMU 1.257e-6
-#define EPS0 8.854e-12
-#define C 2.998e8
-#define SIGMA 0.0
-#define PI 3.14159265359
-#define freq 0.6e9
-#define STEP 1
+const int NX = 150;
+const int NY = 70;
+const int NZ = 10;
+const int PML = 32;
+const int NSTEP = 400;
+const double UMU = 1.257e-6;
+const double EPS0 = 8.854e-12;
+const double C = 2.998e8;
+const double SIGMA = 0.0;
+const double PI = 3.14159265359;
+const double freq = 0.6e9;
+const int STEP = 1;
 
-#define TRGT_X 35
-#define TRGT_Y 35
-#define TRGT_Z 35
+const int TRGT_X = 50;
+const int TRGT_Y = 35;
+const int TRGT_Z = 35;
+
 
 int main(int argc, char **argv)
 {
@@ -35,6 +40,19 @@ int main(int argc, char **argv)
     double *ex = (double*)malloc(sizeof(double) * NX * NY * NZ);
     double *ey = (double*)malloc(sizeof(double) * NX * NY * NZ);
     double *ez = (double*)malloc(sizeof(double) * NX * NY * NZ);
+
+    //PML層内の電界・磁界
+    double r_Ezx;
+    double *Ezx = (double*)malloc(sizeof(double) * PML * NX * NY);
+    double r_Hyx;
+    double *Hyx = (double*)malloc(sizeof(double) * PML * NX * NY);
+
+    //PML媒質内の係数
+    double *CEzx;
+    double *CEzx_x;
+
+    double *CHyx;
+    double *CHyx_x;
 
     double dt, ec1, ec2, hc;
     double t;
@@ -66,6 +84,19 @@ int main(int argc, char **argv)
             }
         }
     }
+    memset(Ezx, 0, sizeof(double) * PML * NX * NY);
+    memset(Hyx, 0, sizeof(double) * PML * NX * NY);
+    InitPml
+    (
+        //PML媒質内の係数
+        &CEzx,
+        &CEzx_x,
+        &CHyx,
+        &CHyx_x,
+        dz,
+        dt
+    );
+    printf("Init_pml\n");
 
     vtkSmartPointer<vtkImageData> imageData =
     vtkSmartPointer<vtkImageData>::New();
@@ -84,19 +115,21 @@ int main(int argc, char **argv)
         printf("Done n = %5d/%5d\n", n, NSTEP);
         sprintf(filename, "../data/data_%04d.vti", n);
 
-
+        // printf("ファイル名出力\n");
         // ******************* 電界の計算 *********************
 
-        if (t < 4.0 / freq)
-        for(i=0;i<NZ-1;i++){
-            {
-                ez[i*NX*NY + TRGT_Y*NX + TRGT_X] = ez[i*NX*NY + TRGT_Y*NX + TRGT_X] + pow(sin(2.0 * PI * freq * t), 4);
+        if (t < 0.5 / freq)
+        for(k=0;k<NZ-1;k++){
+            for(j=0;j<NY;j++){
+                ez[k*NX*NY + j*NX + TRGT_X] = ez[k*NX*NY + j*NX + TRGT_X] + pow(sin(2.0 * PI * freq * t), 4);
             }
         }
 
-        for (i = 0; i < NX-1; i++)
+        // printf("波出力\n");
+
+        for (i = PML; i < NX-1; i++)
         {
-            for (j = 0; j < NY-1; j++)
+            for (j = 1; j < NY; j++)
             {
                 for (k = 0; k < NZ-1; k++)
                 {
@@ -130,13 +163,28 @@ int main(int argc, char **argv)
             }
         }
 
+        // printf("電界計算\n");
+        // ******************* 電界PMLの計算 *********************
 
+        for (i = 1; i < PML; i++)
+        {
+            for (j = 1; j < NY; j++)
+            {
+                for (k = 0; k < NZ-1; k++)
+                {
+                    ez[k*NX*NY + NX*j + i] = CEzx[i] * ez[k*NX*NY + NX*j + i];
+                          + CEzx_x[i] * (hy[k*NX*NY + NX*j + i] - hy[k*NX*NY + NX*j + i - 1]);
+                }
+            }
+        }
+
+        // printf("電界PML計算\n");
         t = (t + dt / 2.0);
 
         // ******************* 磁界の計算 *********************
-        for (i = 0; i < NX; i++)
+        for (i = PML; i < NX; i++)
         {
-            for (j = 0; j < NY; j++)
+            for (j = 1; j < NY; j++)
             {
                 for (k = 0; k < NZ; k++)
                 {
@@ -166,7 +214,30 @@ int main(int argc, char **argv)
                 }
             }
         }
+        // printf("磁界計算\n");
+        // ******************* 磁界PMLの計算 *********************
 
+        for (i = 1; i < PML; i++)
+        {
+            for (j = 1; j < NY; j++)
+            {
+                for (k = 0; k < NZ; k++)
+                {
+                    if (i < NX-1 && k < NZ-1){
+                        hy[k*NX*NY + NX*j + i] = CHyx[i] * hy[k*NX*NY + NX*j + i]
+                                               + CHyx_x[i] * (ez[k*NX*NY + NX*j + i + 1]
+                                               - ez[k*NX*NY + NX*j + i]);
+                    }
+                }
+            }
+            printf("%d\n", i);
+            printf("%f\n", CHyx[i]);
+            printf("%f\n", CHyx_x[i]);
+            printf("%f\n", CEzx[i]);
+            printf("%f\n", CEzx_x[i]);
+        }
+
+        // printf("磁界PML計算\n");
         t = (t + dt / 2.0);
 
 
