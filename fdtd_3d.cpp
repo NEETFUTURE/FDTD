@@ -14,7 +14,7 @@
 const int NX = 150;
 const int NY = 70;
 const int NZ = 10;
-const int PML = 32;
+const int PML = 16;
 const int NSTEP = 400;
 const double UMU = 1.257e-6;
 const double EPS0 = 8.854e-12;
@@ -133,29 +133,31 @@ int main(int argc, char **argv)
             {
                 for (k = 0; k < NZ-1; k++)
                 {
-                    if (j > 0 && k > 0)
-                    {
-                        ex[k*NX*NY + NX*j + i] = ec1 * ex[k*NX*NY + NX*j + i]
-                                               + ec2 * (- hy[k*    NX*NY + NX*j     + i]
-                                                        + hy[(k-1)*NX*NY + NX*j     + i]
-                                                        + hz[k*    NX*NY + NX*j     + i]
-                                                        - hz[k*    NX*NY + NX*(j-1) + i]);
-                    }
-                    if (i > 0 && k > 0)
-                    {
-                        ey[k*NX*NY + NX*j + i] = ec1 * ey[k*NX*NY + NX*j + i]
-                                               + ec2 * (+ hx[k*    NX*NY + NX*j + i]
-                                                        - hx[(k-1)*NX*NY + NX*j + i]
-                                                        - hz[k*    NX*NY + NX*j + i]
-                                                        + hz[k*    NX*NY + NX*j + i - 1]);
-                    }
-                    if (i > 0 && j > 0){
+                    // if (j > 0 && k > 0)
+                    // {
+                    //     ex[k*NX*NY + NX*j + i] = ec1 * ex[k*NX*NY + NX*j + i]
+                    //                            + ec2 * (- hy[k*    NX*NY + NX*j     + i]
+                    //                                     + hy[(k-1)*NX*NY + NX*j     + i]
+                    //                                     + hz[k*    NX*NY + NX*j     + i]
+                    //                                     - hz[k*    NX*NY + NX*(j-1) + i]);
+                    // }
+                    // if (i > 0 && k > 0)
+                    // {
+                    //     ey[k*NX*NY + NX*j + i] = ec1 * ey[k*NX*NY + NX*j + i]
+                    //                            + ec2 * (+ hx[k*    NX*NY + NX*j + i]
+                    //                                     - hx[(k-1)*NX*NY + NX*j + i]
+                    //                                     - hz[k*    NX*NY + NX*j + i]
+                    //                                     + hz[k*    NX*NY + NX*j + i - 1]);
+                    // }
+
+                    // if (i > 0 && j > 0){
                         ez[k*NX*NY + NX*j + i] = ec1 * ez[k*NX*NY + NX*j + i]
                                                + ec2 * (- hx[k*NX*NY + NX*j     + i]
                                                         + hx[k*NX*NY + NX*(j-1) + i]
                                                         + hy[k*NX*NY + NX*j     + i]
                                                         - hy[k*NX*NY + NX*j     + i - 1]);
-                    }
+                    // }
+
                     // fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
                     double* pixel = static_cast<double*>(imageData->GetScalarPointer(i,j,k));
                     pixel[0] = ez[k*NX*NY + NX*j + i];
@@ -188,29 +190,28 @@ int main(int argc, char **argv)
             {
                 for (k = 0; k < NZ; k++)
                 {
-                    if (j < NY-1 && k < NZ-1){
-                        hx[k*NX*NY + NX*j + i] = hx[k*NX*NY + NX*j + i]
-                                               + hc * (+ ey[k*    NX*NY + NX*j     + i]
-                                                       - ey[(k+1)*NX*NY + NX*j     + i]
-                                                       - ez[k*    NX*NY + NX*j     + i]
-                                                       + ez[k*    NX*NY + NX*(j+1) + i]);
-                    }
+                    // if (j < NY-1 && k < NZ-1){
+                    //     hx[k*NX*NY + NX*j + i] = hx[k*NX*NY + NX*j + i]
+                    //                            + hc * (+ ey[k*    NX*NY + NX*j     + i]
+                    //                                    - ey[(k+1)*NX*NY + NX*j     + i]
+                    //                                    - ez[k*    NX*NY + NX*j     + i]
+                    //                                    + ez[k*    NX*NY + NX*(j+1) + i]);
+                    // }
 
                     if (i < NX-1 && k < NZ-1){
                         hy[k*NX*NY + NX*j + i] = hy[k*NX*NY + NX*j + i]
-                                               + hc * (- ex[k*    NX*NY + NX*j + i]
-                                                       + ex[(k+1)*NX*NY + NX*j + i]
+                                               + hc * (
                                                        + ez[k*    NX*NY + NX*j + i]
                                                        - ez[k*    NX*NY + NX*j + i + 1]);
                     }
 
-                    if (j < NY-1 && i < NX-1){
-                        hz[k*NX*NY + NX*j + i] = hz[k*NX*NY + NX*j + i]
-                                               + hc * (+ ex[k*NX*NY + NX*j     + i]
-                                                       - ex[k*NX*NY + NX*(j+1) + i]
-                                                       - ey[k*NX*NY + NX*j     + i]
-                                                       + ey[k*NX*NY + NX*j     + i + 1]);
-                    }
+                    // if (j < NY-1 && i < NX-1){
+                    //     hz[k*NX*NY + NX*j + i] = hz[k*NX*NY + NX*j + i]
+                    //                            + hc * (+ ex[k*NX*NY + NX*j     + i]
+                    //                                    - ex[k*NX*NY + NX*(j+1) + i]
+                    //                                    - ey[k*NX*NY + NX*j     + i]
+                    //                                    + ey[k*NX*NY + NX*j     + i + 1]);
+                    // }
                 }
             }
         }
@@ -225,16 +226,11 @@ int main(int argc, char **argv)
                 {
                     if (i < NX-1 && k < NZ-1){
                         hy[k*NX*NY + NX*j + i] = CHyx[i] * hy[k*NX*NY + NX*j + i]
-                                               + CHyx_x[i] * (ez[k*NX*NY + NX*j + i + 1]
-                                               - ez[k*NX*NY + NX*j + i]);
+                                               + CHyx_x[i] * (-ez[k*NX*NY + NX*j + i + 1]
+                                                              + ez[k*NX*NY + NX*j + i]);
                     }
                 }
             }
-            printf("%d\n", i);
-            printf("%f\n", CHyx[i]);
-            printf("%f\n", CHyx_x[i]);
-            printf("%f\n", CEzx[i]);
-            printf("%f\n", CEzx_x[i]);
         }
 
         // printf("磁界PML計算\n");

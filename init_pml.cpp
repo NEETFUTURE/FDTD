@@ -34,11 +34,17 @@ void InitPml
     for (int i=0; i < PML; i++)
     {
         delta_E_X = delta_max * (double)powf((double)(PML - i) / (double)PML, M);
+        printf("i = %d, delta_E_X = %f\n",i,delta_E_X);
         *(*CEzx+i)  = (1.f - delta_E_X * dt / 2.f / EPS0) / (1.f + delta_E_X * dt / 2.f / EPS0);
         *(*CEzx_x+i) = dt / EPS0 / (1.f + delta_E_X * dt / 2.f / EPS0) / dz;
 
-        delta_H_X = delta_max * (double)powf(((double)(PML - i) - 1.f / 2.f) / (double)PML, M);
-        *(*CHyx+i)   = (1.f - delta_H_X * dt / 2.f / EPS0) / (1.f + delta_H_X * dt / 2.f / EPS0);
-        *(*CHyx_x+i) = dt / UMU / (1.f + delta_H_X * dt / 2.f / EPS0) / dz;
+        //delta_H_X = delta_max * (double)powf(((double)(PML - i) - 1.f / 2.f) / (double)PML, M);
+        *(*CHyx+i)  = (1.f - delta_E_X * dt / 2.f / EPS0) / (1.f + delta_E_X * dt / 2.f / EPS0);
+        *(*CHyx_x+i) = -dt / UMU / (1.f + delta_E_X * dt / 2.f / EPS0) / dz;
+        printf("i = %d\n",i);
+        printf("    CEzx      %f\n", *(*CEzx+i));
+        printf("    CEzx_x    %f\n", *(*CEzx_x+i));
+        printf("    CHyx      %f\n", *(*CHyx+i));
+        printf("    CHyx_x    %f\n", *(*CHyx_x+i));
     }
 }
