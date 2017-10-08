@@ -116,6 +116,24 @@ int main(int argc, char **argv)
         sprintf(filename, "../data/data_%04d.vti", n);
 
         // printf("ファイル名出力\n");
+		// ******************* 電界PMLの計算 *********************
+
+		for (i = 1; i < PML; i++)
+		{
+			for (j = 1; j < NY; j++)
+			{
+				for (k = 0; k < NZ - 1; k++)
+				{
+					ez[k*NX*NY + NX*j + i] = CEzx[i] * ez[k*NX*NY + NX*j + i]
+					                       + CEzx_x[i] * (hy[k*NX*NY + NX*j + i] - hy[k*NX*NY + NX*j + i - 1]);
+					double* pixel = static_cast<double*>(imageData->GetScalarPointer(i, j, k));
+					pixel[0] = ez[k*NX*NY + NX*j + i];
+
+					}
+				}
+			}
+			fprintf(fp2, "%f ,", ez[NX*NY * 4 + NX * 34 + i]);
+		}
         // ******************* 電界の計算 *********************
 
         if (t < 0.5 / freq)
@@ -166,19 +184,7 @@ int main(int argc, char **argv)
         }
 
         // printf("電界計算\n");
-        // ******************* 電界PMLの計算 *********************
 
-        for (i = 1; i < PML; i++)
-        {
-            for (j = 1; j < NY; j++)
-            {
-                for (k = 0; k < NZ-1; k++)
-                {
-                    ez[k*NX*NY + NX*j + i] = CEzx[i] * ez[k*NX*NY + NX*j + i];
-                          + CEzx_x[i] * (hy[k*NX*NY + NX*j + i] - hy[k*NX*NY + NX*j + i - 1]);
-                }
-            }
-        }
 
         // printf("電界PML計算\n");
         t = (t + dt / 2.0);
