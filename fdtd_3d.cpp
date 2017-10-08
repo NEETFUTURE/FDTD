@@ -129,10 +129,8 @@ int main(int argc, char **argv)
 					double* pixel = static_cast<double*>(imageData->GetScalarPointer(i, j, k));
 					pixel[0] = ez[k*NX*NY + NX*j + i];
 
-					}
 				}
 			}
-			fprintf(fp2, "%f ,", ez[NX*NY * 4 + NX * 34 + i]);
 		}
         // ******************* 電界の計算 *********************
 
