@@ -115,7 +115,36 @@ int main(int argc, char **argv)
         printf("Done n = %5d/%5d\n", n, NSTEP);
         sprintf(filename, "../data/data_%04d.vti", n);
 
-        // printf("ファイル名出力\n");
+
+		// ******************* 波源 ******************************
+		if (t < 0.5 / freq)
+		for (k = 0; k<NZ - 1; k++) {
+			for (j = 0; j<NY; j++) {
+				ez[k*NX*NY + j*NX + TRGT_X] = ez[k*NX*NY + j*NX + TRGT_X] + powf(sin(omega * t), 4.0);
+			}
+		}
+
+		// ******************* 完全導体 **************************
+		//int Xr = (int)(NX*2/3);
+		//int Yr = (int)(NY/2);
+		//int Rr = 5;
+
+		//for (i = Xr - Rr; i <= Xr + Rr; i++)
+		//{
+		//	for (j = Yr - Rr; j <= Yr + Rr; j++)
+		//	{
+		//		if (pow(i - Xr, 2.0) + pow(j - Yr, 2.0) <= Rr*Rr)
+		//		{
+		//			for (k = 0; k < NZ - 1; k++)
+		//			{
+		//				ey[k*NX*NY + NX*j + i] = 0.0;
+		//				ex[k*NX*NY + NX*j + i] = 0.0;
+		//				ez[k*NX*NY + NX*j + i] = 0.0;
+		//			}
+		//		}
+		//	}
+		//}
+
 		// ******************* 電界PMLの計算 *********************
 
 		for (i = 1; i < PML; i++)
@@ -134,14 +163,6 @@ int main(int argc, char **argv)
 		}
         // ******************* 電界の計算 *********************
 
-        if (t < 0.5 / freq)
-        for(k=0;k<NZ-1;k++){
-            for(j=0;j<NY;j++){
-                ez[k*NX*NY + j*NX + TRGT_X] = ez[k*NX*NY + j*NX + TRGT_X] + pow(sin(2.0 * PI * freq * t), 4);
-            }
-        }
-
-        // printf("波出力\n");
 
         for (i = PML; i < NX-1; i++)
         {
@@ -149,42 +170,38 @@ int main(int argc, char **argv)
             {
                 for (k = 0; k < NZ-1; k++)
                 {
-                    // if (j > 0 && k > 0)
-                    // {
-                    //     ex[k*NX*NY + NX*j + i] = ec1 * ex[k*NX*NY + NX*j + i]
-                    //                            + ec2 * (- hy[k*    NX*NY + NX*j     + i]
-                    //                                     + hy[(k-1)*NX*NY + NX*j     + i]
-                    //                                     + hz[k*    NX*NY + NX*j     + i]
-                    //                                     - hz[k*    NX*NY + NX*(j-1) + i]);
-                    // }
-                    // if (i > 0 && k > 0)
-                    // {
-                    //     ey[k*NX*NY + NX*j + i] = ec1 * ey[k*NX*NY + NX*j + i]
-                    //                            + ec2 * (+ hx[k*    NX*NY + NX*j + i]
-                    //                                     - hx[(k-1)*NX*NY + NX*j + i]
-                    //                                     - hz[k*    NX*NY + NX*j + i]
-                    //                                     + hz[k*    NX*NY + NX*j + i - 1]);
-                    // }
+                     if (j > 0 && k > 0)
+                     {
+                         ex[k*NX*NY + NX*j + i] = ec1 * ex[k*NX*NY + NX*j + i]
+                                                + ec2 * (- hy[k*    NX*NY + NX*j     + i]
+                                                         + hy[(k-1)*NX*NY + NX*j     + i]
+                                                         + hz[k*    NX*NY + NX*j     + i]
+                                                         - hz[k*    NX*NY + NX*(j-1) + i]);
+                     }
+                     if (i > 0 && k > 0)
+                     {
+                         ey[k*NX*NY + NX*j + i] = ec1 * ey[k*NX*NY + NX*j + i]
+                                                + ec2 * (+ hx[k*    NX*NY + NX*j + i]
+                                                         - hx[(k-1)*NX*NY + NX*j + i]
+                                                         - hz[k*    NX*NY + NX*j + i]
+                                                         + hz[k*    NX*NY + NX*j + i - 1]);
+                     }
 
-                    // if (i > 0 && j > 0){
+                     if (i > 0 && j > 0){
                         ez[k*NX*NY + NX*j + i] = ec1 * ez[k*NX*NY + NX*j + i]
                                                + ec2 * (- hx[k*NX*NY + NX*j     + i]
                                                         + hx[k*NX*NY + NX*(j-1) + i]
                                                         + hy[k*NX*NY + NX*j     + i]
                                                         - hy[k*NX*NY + NX*j     + i - 1]);
-                    // }
+                     }
 
-                    // fprintf(fp, "%9.7f ", ez[k*NX*NY + NX*j + i]);
                     double* pixel = static_cast<double*>(imageData->GetScalarPointer(i,j,k));
                     pixel[0] = ez[k*NX*NY + NX*j + i];
                 }
             }
         }
 
-        // printf("電界計算\n");
 
-
-        // printf("電界PML計算\n");
         t = (t + dt / 2.0);
 
         // ******************* 磁界の計算 *********************
@@ -194,28 +211,29 @@ int main(int argc, char **argv)
             {
                 for (k = 0; k < NZ; k++)
                 {
-                    // if (j < NY-1 && k < NZ-1){
-                    //     hx[k*NX*NY + NX*j + i] = hx[k*NX*NY + NX*j + i]
-                    //                            + hc * (+ ey[k*    NX*NY + NX*j     + i]
-                    //                                    - ey[(k+1)*NX*NY + NX*j     + i]
-                    //                                    - ez[k*    NX*NY + NX*j     + i]
-                    //                                    + ez[k*    NX*NY + NX*(j+1) + i]);
-                    // }
+                     if (j < NY-1 && k < NZ-1){
+                         hx[k*NX*NY + NX*j + i] = hx[k*NX*NY + NX*j + i]
+                                                + hc * (+ ey[k*    NX*NY + NX*j     + i]
+                                                        - ey[(k+1)*NX*NY + NX*j     + i]
+                                                        - ez[k*    NX*NY + NX*j     + i]
+                                                        + ez[k*    NX*NY + NX*(j+1) + i]);
+                     }
 
                     if (i < NX-1 && k < NZ-1){
                         hy[k*NX*NY + NX*j + i] = hy[k*NX*NY + NX*j + i]
-                                               + hc * (
+                                               + hc * (+ ex[k*    NX*NY + NX*j + i]
+												       - ex[(k+1)*NX*NY + NX*j + i]
                                                        + ez[k*    NX*NY + NX*j + i]
                                                        - ez[k*    NX*NY + NX*j + i + 1]);
                     }
 
-                    // if (j < NY-1 && i < NX-1){
-                    //     hz[k*NX*NY + NX*j + i] = hz[k*NX*NY + NX*j + i]
-                    //                            + hc * (+ ex[k*NX*NY + NX*j     + i]
-                    //                                    - ex[k*NX*NY + NX*(j+1) + i]
-                    //                                    - ey[k*NX*NY + NX*j     + i]
-                    //                                    + ey[k*NX*NY + NX*j     + i + 1]);
-                    // }
+                     if (j < NY-1 && i < NX-1){
+                         hz[k*NX*NY + NX*j + i] = hz[k*NX*NY + NX*j + i]
+                                                + hc * (+ ex[k*NX*NY + NX*j     + i]
+                                                        - ex[k*NX*NY + NX*(j+1) + i]
+                                                        - ey[k*NX*NY + NX*j     + i]
+                                                        + ey[k*NX*NY + NX*j     + i + 1]);
+                     }
                 }
             }
         }
