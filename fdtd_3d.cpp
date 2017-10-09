@@ -57,6 +57,7 @@ int main(int argc, char **argv)
     double dt, ec1, ec2, hc;
     double t;
     double dz = 1.0e-2;
+	double omega = 2*PI*freq;
 
     char filename[40];
 
